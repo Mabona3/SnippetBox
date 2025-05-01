@@ -1,0 +1,25 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="shortcut icon" href="/static/img/favicon.ico" type='image/x-icon'>
+  <title>{{ template "title" .}}</title>
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="/">Snippetbox</a>
+    </h1>
+  </header>
+  {{block "nav" .}}
+    just in case
+  {{end}}
+  <main>{{ template "main" .}}</main>
+  <footer>Powered by <a href="https://golang.org">Go</a> &copy; {{.CurrentYear}}</footer>
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
+{{end}}
