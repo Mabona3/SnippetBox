@@ -1,2 +1,2 @@
 # Snippet Box 
-A Go lang server
+A Website for posting snippets made using golang.
