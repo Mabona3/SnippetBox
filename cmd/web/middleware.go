@@ -48,6 +48,5 @@ func (a *application) InitializeSession(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
-		session.Save(r, w)
 	})
 }

@@ -67,6 +67,11 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		data.Flash = flash[0].(string)
 	}
 
+	err = session.Save(r, w)
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
 	a.render(w, http.StatusOK, "view.html", data)
 }
 
@@ -114,6 +119,11 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 	}
 
 	session.AddFlash("Snippet successfully created!", "flash_created")
+	err = session.Save(r, w)
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 
