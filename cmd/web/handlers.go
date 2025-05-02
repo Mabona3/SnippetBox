@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/sessions"
 	"github.com/julienschmidt/httprouter"
 	"snippetbox.mabona3.net/internal/models"
 	"snippetbox.mabona3.net/internal/validator"
@@ -34,6 +35,12 @@ func (a *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
+	session := r.Context().Value("session").(*sessions.Session)
+	if session == nil {
+		a.serverError(w, errors.New("No Session Initialized"))
+		return
+	}
+
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
@@ -55,6 +62,11 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	data := a.newTemplateData(r)
 	data.Snippet = snippet
 
+	flash := session.Flashes("flash_created")
+	if len(flash) != 0 {
+		data.Flash = flash[0].(string)
+	}
+
 	a.render(w, http.StatusOK, "view.html", data)
 }
 
@@ -69,9 +81,15 @@ func (a *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	var form *snippetCreateForm = nil
+	var form snippetCreateForm
 
-	err := a.decodePostForm(r, form)
+	session := r.Context().Value("session").(*sessions.Session)
+	if session == nil {
+		a.serverError(w, models.ErrSessionNotFound)
+		return
+	}
+
+	err := a.decodePostForm(r, &form)
 	if err != nil {
 		a.clientError(w, http.StatusBadRequest)
 		return
@@ -95,6 +113,7 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	session.AddFlash("Snippet successfully created!", "flash_created")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 

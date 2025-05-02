@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/gorilla/sessions"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
@@ -23,5 +22,5 @@ func (a *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/snippet/create", a.snippetCreate)
 	router.HandlerFunc(http.MethodPost, "/snippet/create", a.snippetCreatePost)
 
-	return alice.New(a.recoverPanic, a.logRequest, secureHeaders).Then(router)
+	return alice.New(a.recoverPanic, a.logRequest, secureHeaders, a.InitializeSession).Then(router)
 }

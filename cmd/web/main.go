@@ -27,7 +27,7 @@ type application struct {
 func main() {
 	var addr string
 	var dsn string
-	var store sessions.CookieStore
+	var store *sessions.CookieStore
 	getVars(&dsn, &addr, &store)
 
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -51,7 +51,7 @@ func main() {
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: newtemplateCache,
 		formDecoder:   formDecoder,
-		Store:         &store,
+		Store:         store,
 	}
 
 	srv := &http.Server{
@@ -65,10 +65,10 @@ func main() {
 	a.errorLog.Fatal(err)
 }
 
-func getVars(dsn *string, addr *string, store *sessions.CookieStore) {
+func getVars(dsn *string, addr *string, store **sessions.CookieStore) {
 	godotenv.Load(".env")
 
-	store = sessions.NewCookieStore([]byte(os.Getenv("SECRET_KEY")))
+	*store = sessions.NewCookieStore([]byte(os.Getenv("SECRET_KEY")))
 
 	*addr = *flag.String("addr", ":"+os.Getenv("PORT"), "HTTP network address")
 	*dsn = *flag.String("dsn", os.Getenv("DSN"), "MySQL data source name")

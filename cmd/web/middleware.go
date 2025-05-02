@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -32,5 +33,21 @@ func (a *application) recoverPanic(next http.Handler) http.Handler {
 			}
 		}()
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (a *application) InitializeSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := a.Store.Get(r, "SnippetBox")
+		ctx := context.WithValue(r.Context(), "session", session)
+		r = r.WithContext(ctx)
+
+		if err != nil {
+			a.serverError(w, fmt.Errorf("%s", err))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+		session.Save(r, w)
 	})
 }
