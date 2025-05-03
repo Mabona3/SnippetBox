@@ -62,11 +62,6 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	data := a.newTemplateData(r)
 	data.Snippet = snippet
 
-	flash := session.Flashes("flash_created")
-	if len(flash) != 0 {
-		data.Flash = flash[0].(string)
-	}
-
 	err = session.Save(r, w)
 	if err != nil {
 		a.serverError(w, err)
@@ -118,7 +113,7 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	session.AddFlash("Snippet successfully created!", "flash_created")
+	session.AddFlash("Snippet successfully created!")
 	err = session.Save(r, w)
 	if err != nil {
 		a.serverError(w, err)

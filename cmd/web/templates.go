@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"snippetbox.mabona3.net/internal/models"
 )
 
@@ -14,7 +15,7 @@ type templateData struct {
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
 	Form        any
-	Flash				string
+	Flash       string
 }
 
 func humanDate(t time.Time) string {
@@ -26,8 +27,17 @@ var functions = template.FuncMap{
 }
 
 func (a application) newTemplateData(r *http.Request) *templateData {
+
+	session := r.Context().Value("session").(*sessions.Session)
+	var flashMsg string
+	flash := session.Flashes()
+	if len(flash) != 0 {
+		flashMsg = flash[0].(string)
+	}
+
 	return &templateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       flashMsg,
 	}
 }
 

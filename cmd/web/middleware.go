@@ -38,7 +38,7 @@ func (a *application) recoverPanic(next http.Handler) http.Handler {
 
 func (a *application) InitializeSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := a.Store.Get(r, "SnippetBox")
+		session, err := a.Store.Get(r, "session")
 		ctx := context.WithValue(r.Context(), "session", session)
 		r = r.WithContext(ctx)
 
