@@ -20,6 +20,19 @@ type snippetCreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userLoginForm struct {
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 func (a *application) home(w http.ResponseWriter, r *http.Request) {
 
 	snippets, err := a.snippets.Latest()
@@ -28,7 +41,7 @@ func (a *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := a.newTemplateData(r)
+	data := a.newTemplateData(w, r)
 	data.Snippets = snippets
 
 	a.render(w, http.StatusOK, "home.html", data)
@@ -59,7 +72,7 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := a.newTemplateData(r)
+	data := a.newTemplateData(w, r)
 	data.Snippet = snippet
 
 	err = session.Save(r, w)
@@ -71,7 +84,7 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	data := a.newTemplateData(r)
+	data := a.newTemplateData(w, r)
 
 	data.Form = snippetCreateForm{
 		Expires: 365,
@@ -101,7 +114,7 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 	form.CheckField(validator.PremittedInt(form.Expires, 1, 7, 365), "expires", "This firld must equal 1, 7 or 365")
 
 	if !form.Valid() {
-		data := a.newTemplateData(r)
+		data := a.newTemplateData(w, r)
 		data.Form = form
 		a.render(w, http.StatusUnprocessableEntity, "create.html", data)
 		return
@@ -131,4 +144,124 @@ func (a *application) Neuter(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (a *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	data := a.newTemplateData(w, r)
+	data.Form = userSignupForm{}
+	a.render(w, http.StatusOK, "signup.html", data)
+}
+
+func (a *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	var form userSignupForm
+
+	err := a.decodePostForm(r, &form)
+	if err != nil {
+		a.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "This field must be at least 8 characters long")
+
+	if !form.Valid() {
+		data := a.newTemplateData(w, r)
+		data.Form = form
+		a.render(w, http.StatusUnprocessableEntity, "signup.html", data)
+		return
+	}
+
+	err = a.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldError("email", "Email Address is already in use")
+			data := a.newTemplateData(w, r)
+			data.Form = form
+			a.render(w, http.StatusUnprocessableEntity, "signup.html", data)
+		} else {
+			a.serverError(w, err)
+		}
+
+		return
+	}
+
+	session := r.Context().Value("session").(*sessions.Session)
+	session.AddFlash("Your signup was successful . Please Login.")
+	session.Save(r, w)
+
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (a *application) userLogin(w http.ResponseWriter, r *http.Request) {
+	data := a.newTemplateData(w, r)
+	data.Form = userLoginForm{}
+	a.render(w, http.StatusOK, "login.html", data)
+}
+
+func (a *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+	var form userLoginForm
+
+	err := a.decodePostForm(r, &form)
+	if err != nil {
+		a.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	if !form.Valid() {
+		data := a.newTemplateData(w, r)
+		data.Form = form
+		a.render(w, http.StatusUnprocessableEntity, "login.html", data)
+		return
+	}
+
+	id, err := a.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is incorrect")
+
+			data := a.newTemplateData(w, r)
+			data.Form = form
+			a.render(w, http.StatusUnprocessableEntity, "login.html", data)
+			return
+		}
+		a.serverError(w, err)
+		return
+	}
+
+	session, err := a.Store.New(r, "authsession")
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+
+	session.Options.SameSite = http.SameSiteLaxMode
+	session.Values["userId"] = id
+	session.Save(r, w)
+
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+}
+
+func (a *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	session := r.Context().Value("session").(*sessions.Session)
+
+	session.AddFlash("You've logged out successfully!")
+	session.Save(r, w)
+
+	authsession, err := a.Store.Get(r, "authsession")
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+
+	authsession.Options.MaxAge = -1
+	authsession.Save(r, w)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -1,0 +1,31 @@
+{{define "title"}}Signup{{end}}
+
+{{define "main"}}
+<form action="/user/signup" method="post">
+        {{.CSRFField}}
+  <div>
+    <label for="name">Name:</label>
+    {{with .Form.FieldErrors.name}}
+    <label class="error" for="name">{{.}}</label>
+    {{end}}
+    <input type="text" name="name" value="{{.Form.Name}}" id="name" autocomplete="name">
+  </div>
+  <div>
+    <label for="email">Email:</label>
+    {{with .Form.FieldErrors.email}}
+    <label class="error" for="email">{{.}}</label>
+    {{end}}
+    <input type="email" name="email" value="{{.Form.Email}}" id="email" autocomplete="email">
+  </div>
+  <div>
+    <label for="password">Password:</label>
+    {{with .Form.FieldErrors.password}}
+    <label class="error" for="password">{{.}}</label>
+    {{end}}
+    <input type="password" name="password" id="password">
+  </div>
+  <div>
+    <input type="submit" value="Signup">
+  </div>
+</form>
+{{end}}

@@ -2,20 +2,20 @@ package main
 
 import (
 	"html/template"
-	"net/http"
 	"path/filepath"
 	"time"
 
-	"github.com/gorilla/sessions"
 	"snippetbox.mabona3.net/internal/models"
 )
 
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
+	CSRFField       template.HTML
 }
 
 func humanDate(t time.Time) string {
@@ -24,21 +24,6 @@ func humanDate(t time.Time) string {
 
 var functions = template.FuncMap{
 	"humanDate": humanDate,
-}
-
-func (a application) newTemplateData(r *http.Request) *templateData {
-
-	session := r.Context().Value("session").(*sessions.Session)
-	var flashMsg string
-	flash := session.Flashes()
-	if len(flash) != 0 {
-		flashMsg = flash[0].(string)
-	}
-
-	return &templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       flashMsg,
-	}
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -56,17 +41,14 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		ts, err = ts.ParseGlob("./ui/html/partials/*.html")
 		if err != nil {
 			return nil, err
 		}
-
 		ts, err = ts.ParseFiles(page)
 		if err != nil {
 			return nil, err
 		}
-
 		cache[name] = ts
 	}
 

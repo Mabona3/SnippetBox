@@ -2,24 +2,25 @@
 
 {{define "main"}}
 <form action="/snippet/create" method="post">
+  {{.CSRFField}}
   <div>
     <label for="title">Title:</label>
     {{with .Form.Validator.FieldErrors.title}}
-      <label class="error">{{.}}</label>
+    <label class="error">{{.}}</label>
     {{end}}
     <input type="text" name='title'>
   </div>
   <div>
     <label for="content">Content:</label>
     {{with .Form.Validator.FieldErrors.content}}
-      <label class="error">{{.}}</label>
+    <label class="error">{{.}}</label>
     {{end}}
     <textarea name="content"></textarea>
   </div>
   <div>
     <label for="expires">Delete in:</label>
     {{with .Form.Validator.FieldErrors.expires}}
-      <label class="error">{{.}}</label>
+    <label class="error">{{.}}</label>
     {{end}}
     <input type="radio" name="expires" value="365" checked> One Year
     <input type="radio" name="expires" value="7"> One Week

@@ -21,6 +21,7 @@ type application struct {
 	infoLog       *log.Logger
 	errorLog      *log.Logger
 	snippets      *models.SnippetModel
+	users         *models.UserModel
 	templateCache map[string]*template.Template
 	formDecoder   *schema.Decoder
 	Store         *sessions.CookieStore
@@ -51,6 +52,7 @@ func main() {
 		infoLog:       log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		errorLog:      errLog,
 		snippets:      &models.SnippetModel{DB: db},
+		users:         &models.UserModel{DB: db},
 		templateCache: newtemplateCache,
 		formDecoder:   formDecoder,
 		Store:         store,
@@ -61,12 +63,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:     addr,
-		ErrorLog: a.errorLog,
-		Handler:  a.routes(),
-		TLSConfig: tlsConfig,
-		IdleTimeout: time.Minute,
-		ReadTimeout: 5 * time.Second,
+		Addr:         addr,
+		ErrorLog:     a.errorLog,
+		Handler:      a.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 

@@ -1,0 +1,27 @@
+{{define "title"}}Login{{end}}
+
+{{define "main"}}
+<form action="/user/login" novalidate method="post">
+  {{.CSRFField}}
+  {{range .Form.NonFieldErrors}}
+    <div class="error">{{.}}</div>
+  {{end}}
+  <div>
+    <label for="email">Email:</label>
+    {{with .Form.FieldErrors.email}}
+      <label for="email" class="errors">{{.}}</label>
+    {{end}}
+    <input type="email" name="email" value="{{.Form.Email}}" id="email">
+  </div>
+  <div>
+    <label for="password">Password:</label>
+    {{with .Form.FieldErrors.password}}
+      <label for="password" class="error">{{.}}</label>
+    {{end}}
+    <input type="password" name="password" id="password">
+  </div>
+  <div>
+    <input type="submit" value="Login">
+  </div>
+</form>
+{{end}}
