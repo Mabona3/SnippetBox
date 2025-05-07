@@ -68,7 +68,7 @@ func (a *application) decodePostForm(r *http.Request, dst any) error {
 
 func (a application) newTemplateData(w http.ResponseWriter, r *http.Request) *templateData {
 
-	session := r.Context().Value("session").(*sessions.Session)
+	session := r.Context().Value(sessionContextKey).(*sessions.Session)
 	var flashMsg string
 	flash := session.Flashes()
 	if len(flash) != 0 {
@@ -87,11 +87,10 @@ func (a application) newTemplateData(w http.ResponseWriter, r *http.Request) *te
 }
 
 func (a *application) isAuthenticated(r *http.Request) bool {
-	session, err := a.Store.Get(r, "authsession")
-	if err != nil {
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
 		return false
 	}
-	_, ok := session.Values["userId"]
 
-	return ok
+	return isAuthenticated
 }

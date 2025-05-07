@@ -48,7 +48,7 @@ func (a *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	session := r.Context().Value("session").(*sessions.Session)
+	session := r.Context().Value(sessionContextKey).(*sessions.Session)
 	if session == nil {
 		a.serverError(w, errors.New("No Session Initialized"))
 		return
@@ -96,7 +96,7 @@ func (a *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	var form snippetCreateForm
 
-	session := r.Context().Value("session").(*sessions.Session)
+	session := r.Context().Value(sessionContextKey).(*sessions.Session)
 	if session == nil {
 		a.serverError(w, models.ErrSessionNotFound)
 		return
@@ -188,7 +188,7 @@ func (a *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session := r.Context().Value("session").(*sessions.Session)
+	session := r.Context().Value(sessionContextKey).(*sessions.Session)
 	session.AddFlash("Your signup was successful . Please Login.")
 	session.Save(r, w)
 
@@ -249,7 +249,7 @@ func (a *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	session := r.Context().Value("session").(*sessions.Session)
+	session := r.Context().Value(sessionContextKey).(*sessions.Session)
 
 	session.AddFlash("You've logged out successfully!")
 	session.Save(r, w)

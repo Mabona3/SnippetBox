@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -44,7 +43,7 @@ func (a *application) InitializeSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := a.Store.Get(r, "session")
 		session.Options.SameSite = http.SameSiteLaxMode
-		ctx := context.WithValue(r.Context(), "session", session)
+		ctx := context.WithValue(r.Context(), sessionContextKey, session)
 		r = r.WithContext(ctx)
 
 		if err != nil {
@@ -56,20 +55,42 @@ func (a *application) InitializeSession(next http.Handler) http.Handler {
 	})
 }
 
-func (a *application)customCSRFErrorHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("CSRF validation failed")
-	http.Error(w, "CSRF token invalid or expired", http.StatusBadRequest)
-}
-
 func (a *application) noSurf(next http.Handler) http.Handler {
 	csrfHandler := csrf.Protect([]byte(
 		os.Getenv("SECRET_KEY")),
 		csrf.Secure(true),
 		csrf.Path("/"),
 		csrf.SameSite(csrf.SameSiteDefaultMode),
-		csrf.ErrorHandler(http.HandlerFunc(a.customCSRFErrorHandler)),
 	)
 	return csrfHandler(next)
+}
+
+func (a *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := a.Store.Get(r, "authsession")
+		if err != nil {
+			next.ServeHTTP(w ,r)
+			return
+		}
+
+		id, ok := session.Values["userId"].(int)
+		if !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		exists, err := a.users.Exists(id)
+		if err != nil {
+			a.serverError(w, err)
+			return
+		}
+
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			r = r.WithContext(ctx)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *application) requireNoAuthentication(next http.Handler) http.Handler {
