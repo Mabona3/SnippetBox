@@ -33,6 +33,10 @@ type userSignupForm struct {
 	validator.Validator `form:"-"`
 }
 
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}
+
 func (a *application) home(w http.ResponseWriter, r *http.Request) {
 
 	snippets, err := a.snippets.Latest()
@@ -111,7 +115,7 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
-	form.CheckField(validator.PremittedInt(form.Expires, 1, 7, 365), "expires", "This firld must equal 1, 7 or 365")
+	form.CheckField(validator.PremittedValue(form.Expires, 1, 7, 365), "expires", "This firld must equal 1, 7 or 365")
 
 	if !form.Valid() {
 		data := a.newTemplateData(w, r)

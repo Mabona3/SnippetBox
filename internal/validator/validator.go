@@ -46,7 +46,7 @@ func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
 
-func PremittedInt(value int, premittedValues ...int) bool {
+func PremittedValue[T comparable](value T, premittedValues ...T) bool {
 	return slices.Contains(premittedValues, value)
 }
 

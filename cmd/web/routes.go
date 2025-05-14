@@ -23,6 +23,8 @@ func (a *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
+
 	router.HandlerFunc(http.MethodGet, "/", a.home)
 	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", a.snippetView)
 
